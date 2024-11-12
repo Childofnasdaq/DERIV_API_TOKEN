@@ -348,35 +348,38 @@
         }
 
         async function placeTrade() {
-            const tradeRequest = {
-                buy: 1,
-                parameters: {
-                    amount: 10,
-                    basis: "stake",
-                    contract_type: "CALL",
-                    currency: "USD",
-                    duration: 5,
-                    duration_unit: "m",
-                    symbol: "R_100",
-                    comment: "C.O.N-IBOT-MOBILE"
-                }
-            };
-
-            if (!api || api.readyState !== WebSocket.OPEN) {
-                addLog("WebSocket connection is not open.");
-                return;
-            }
-
-            api.send(JSON.stringify(tradeRequest));
-            api.onmessage = (event) => {
-                const response = JSON.parse(event.data);
-                if (response.error) {
-                    addLog(`Trade Error: ${response.error.message}`);
-                } else {
-                    addLog(`Trade Successful: ${response.buy.contract_id}`);
-                }
-            };
+    const tradeRequest = {
+        buy: 1,
+        price: 10,  // Set trade amount explicitly
+        parameters: {
+            amount: 10,
+            basis: "stake",
+            contract_type: "CALL",
+            currency: "USD",
+            duration: 5,
+            duration_unit: "m",
+            symbol: "R_100",
+            comment: "C.O.N-IBOT-MOBILE"
         }
+    };
+
+    if (!api || api.readyState !== WebSocket.OPEN) {
+        addLog("WebSocket connection is not open.");
+        return;
+    }
+
+    // Send trade request
+    api.send(JSON.stringify(tradeRequest));
+    api.onmessage = (event) => {
+        const response = JSON.parse(event.data);
+        if (response.error) {
+            addLog(`Trade Error: ${response.error.message}`);
+        } else if (response.buy) {
+            addLog(`Trade Successful: Contract ID ${response.buy.contract_id}`);
+        }
+    };
+}
+
 
         function addLog(message) {
             const logList = document.getElementById('logList');
