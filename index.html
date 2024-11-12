@@ -3,100 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deriv API Test</title>
+    <title>Child of Nasdaq - Automated Trading</title>
+
+    <!-- Font Awesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
-        #logs { max-width: 600px; margin: 20px auto; background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; text-align: left; }
-        #logs p { margin: 0; padding: 5px; font-size: 14px; border-bottom: 1px solid #eee; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a2b48;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            flex-grow: 1;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .log-section {
+            background-color: #2a3c5b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            position: relative;
+        }
+
+        .log-section ul {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-right: 30px;
+        }
+
+        .log-section ul li {
+            font-family: monospace;
+            color: #00ff00;
+        }
+
+        .robot-active {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 10px;
+            height: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .action-buttons button {
+            width: 45%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-trade {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-connect {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #1c2e4a;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .nav-bar button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nav-bar button i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-left: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .form-group i {
+            color: #007bff;
+            font-size: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<h1>Deriv API Automated Trading Test</h1>
-<p>Enter your API token to connect to Deriv and place a test trade.</p>
+    <!-- Authentication Screen -->
+    <div class="container" id="authenticationScreen">
+        <h2>Authentication</h2>
+        <form id="authForm" onsubmit="authenticateUser(event)">
+            <div class="form-group">
+                <i class="fas fa-user-circle"></i>
+                <input type="text" id="mentorId" placeholder="Mentor ID" required>
+            </div>
+            <div class="form-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <i class="fas fa-key"></i>
+                <input type="text" id="licenseKey" placeholder="License Key" required>
+            </div>
+            <button type="submit" class="btn-connect">Authenticate</button>
+        </form>
+    </div>
 
-<input type="text" id="apiToken" placeholder="Enter Deriv API Token" style="width: 60%; padding: 10px; margin-bottom: 10px;">
-<button onclick="connectToDeriv()">Connect & Trade</button>
+    <!-- Home Screen -->
+    <div class="container hidden" id="homeScreen">
+        <h2>Deriv Trading Bot</h2>
+        <input type="text" id="apiToken" placeholder="Enter Deriv API Token" style="width: 100%; padding: 10px;">
+        <button onclick="connectToDeriv()" class="btn-connect">Connect & Start Trading</button>
+        <div class="log-section">
+            <div class="robot-active"></div>
+            <h3>Bot Logs</h3>
+            <ul id="logs"></ul>
+        </div>
+    </div>
 
-<div id="logs"></div>
+    <script>
+        let ws;
+        let isConnected = false;
 
-<script>
-    let ws;
-    let isConnected = false;
+        function authenticateUser(event) {
+            event.preventDefault();
+            const mentorId = document.getElementById('mentorId').value;
+            const email = document.getElementById('email').value;
+            const licenseKey = document.getElementById('licenseKey').value;
 
-    function logMessage(message) {
-        const logContainer = document.getElementById('logs');
-        const logItem = document.createElement('p');
-        logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        logContainer.appendChild(logItem);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    }
-
-    function connectToDeriv() {
-        const apiToken = document.getElementById('apiToken').value;
-        if (!apiToken) {
-            logMessage("API token is required.");
-            return;
+            // Placeholder authentication (replace with actual validation)
+            if (mentorId && email && licenseKey) {
+                document.getElementById('authenticationScreen').classList.add('hidden');
+                document.getElementById('homeScreen').classList.remove('hidden');
+                logMessage("Authentication successful.");
+            } else {
+                alert("Invalid credentials.");
+            }
         }
 
-        ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-        ws.onopen = () => {
-            logMessage("Connecting to Deriv...");
-            ws.send(JSON.stringify({ authorize: apiToken }));
-        };
+        function logMessage(message) {
+            const logContainer = document.getElementById('logs');
+            const logItem = document.createElement('li');
+            logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContainer.appendChild(logItem);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
 
-        ws.onmessage = (message) => {
-            const response = JSON.parse(message.data);
-
-            if (response.error) {
-                logMessage(`Error: ${response.error.message}`);
-                ws.close();
+        function connectToDeriv() {
+            const apiToken = document.getElementById('apiToken').value;
+            if (!apiToken) {
+                logMessage("API token is required.");
                 return;
             }
 
-            if (response.msg_type === 'authorize') {
-                isConnected = true;
-                logMessage("Authorization successful. Connected to Deriv.");
-                placeTrade();
-            } else if (response.msg_type === 'buy') {
-                logMessage(`Trade placed successfully. Contract ID: ${response.buy.contract_id}`);
-            }
-        };
+            ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+            ws.onopen = () => {
+                logMessage("Connecting to Deriv...");
+                ws.send(JSON.stringify({ authorize: apiToken }));
+            };
 
-        ws.onerror = (error) => {
-            logMessage(`WebSocket error: ${error.message}`);
-        };
+            ws.onmessage = (message) => {
+                const response = JSON.parse(message.data);
 
-        ws.onclose = () => {
-            isConnected = false;
-            logMessage("Disconnected from Deriv.");
-        };
-    }
+                if (response.error) {
+                    logMessage(`Error: ${response.error.message}`);
+                    ws.close();
+                    return;
+                }
 
-    function placeTrade() {
-        if (!isConnected) {
-            logMessage("Not connected. Cannot place trade.");
-            return;
+                if (response.msg_type === 'authorize') {
+                    isConnected = true;
+                    logMessage("Authorization successful. Connected to Deriv.");
+                    placeTrade();
+                } else if (response.msg_type === 'buy') {
+                    logMessage(`Trade placed successfully. Contract ID: ${response.buy.contract_id}`);
+                }
+            };
+
+            ws.onerror = (error) => {
+                logMessage(`WebSocket error: ${error.message}`);
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                logMessage("Disconnected from Deriv.");
+            };
         }
 
-        const tradeRequest = {
-            buy: 1,
-            price: 10,                  // Amount for the trade
-            parameters: {
-                amount: 10,
-                basis: 'stake',
-                contract_type: 'CALL',   // 'CALL' or 'PUT'
-                currency: 'USD',
-                duration: 5,
-                duration_unit: 'm',
-                symbol: 'R_50'
+        function placeTrade() {
+            if (!isConnected) {
+                logMessage("Not connected. Cannot place trade.");
+                return;
             }
-        };
 
-        logMessage("Placing trade...");
-        ws.send(JSON.stringify(tradeRequest));
-    }
-</script>
+            const tradeRequest = {
+                buy: 1,
+                price: 10, // Amount for the trade
+                parameters: {
+                    amount: 10,
+                    basis: 'stake',
+                    contract_type: 'CALL', // 'CALL' or 'PUT'
+                    currency: 'USD',
+                    duration: 5,
+                    duration_unit: 'm',
+                    symbol: 'R_50',
+                    comment: "C.O.N-IBOT - MOBILE"
+                }
+            };
+
+            logMessage("Placing trade...");
+            ws.send(JSON.stringify(tradeRequest));
+        }
+    </script>
 
 </body>
 </html>
