@@ -3,100 +3,393 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deriv API Test</title>
+    <title>Child of Nasdaq</title>
+
+    <!-- Font Awesome CDN -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f9; color: #333; text-align: center; padding: 20px; }
-        #logs { max-width: 600px; margin: 20px auto; background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 5px; text-align: left; }
-        #logs p { margin: 0; padding: 5px; font-size: 14px; border-bottom: 1px solid #eee; }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a2b48;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            flex-grow: 1;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .bot-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .bot-info img {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .log-section {
+            background-color: #2a3c5b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            position: relative;
+        }
+
+        .log-section ul {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-right: 30px;
+        }
+
+        .log-section ul li {
+            font-family: monospace;
+            color: #00ff00;
+        }
+
+        .robot-active {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 10px;
+            height: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .action-buttons button {
+            width: 45%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-trade {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .btn-settings {
+            background-color: white;
+            color: black;
+        }
+
+        .btn-connect {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #1c2e4a;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .nav-bar button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .nav-bar button i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-left: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .form-group i {
+            color: #007bff;
+            font-size: 20px;
+        }
+
+        .hidden-upload {
+            display: none;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<h1>Deriv API Automated Trading Test</h1>
-<p>Enter your API token to connect to Deriv and place a test trade.</p>
+    <!-- Authentication Screen -->
+    <div class="container" id="authenticationScreen">
+        <h2>Authentication</h2>
+        <form id="authForm" onsubmit="authenticateUser(event)">
+            <div class="form-group">
+                <i class="fas fa-user-circle"></i>
+                <input type="text" id="mentorId" placeholder="Mentor ID" required>
+            </div>
 
-<input type="text" id="apiToken" placeholder="Enter Deriv API Token" style="width: 60%; padding: 10px; margin-bottom: 10px;">
-<button onclick="connectToDeriv()">Connect & Trade</button>
+            <div class="form-group">
+                <i class="fas fa-envelope"></i>
+                <input type="email" id="email" placeholder="Email" required>
+            </div>
 
-<div id="logs"></div>
+            <div class="form-group">
+                <i class="fas fa-key"></i>
+                <input type="text" id="apiToken" placeholder="API Token (License Key)" required>
+            </div>
 
-<script>
-    let ws;
-    let isConnected = false;
+            <button type="submit" class="btn-connect">Authenticate</button>
+        </form>
+        <p style="text-align: center; margin-top: 10px;"><a href="#" style="color: #007bff;">Need help?</a></p>
+    </div>
 
-    function logMessage(message) {
-        const logContainer = document.getElementById('logs');
-        const logItem = document.createElement('p');
-        logItem.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-        logContainer.appendChild(logItem);
-        logContainer.scrollTop = logContainer.scrollHeight;
-    }
+    <!-- Home Screen -->
+    <div class="container hidden" id="homeScreen">
+        <div class="bot-info">
+            <h2>CHILD OF NASDAQ</h2>
+            <img id="botImage" src="https://via.placeholder.com/300x200" alt="Bot Image">
+            <p>C.O.N-IBOT, 24/7 OPERATION</p>
+            <button onclick="document.getElementById('fileInput').click();">Upload Icon</button>
+            <input type="file" id="fileInput" class="hidden-upload" accept="image/*" onchange="loadImage(event)">
+        </div>
 
-    function connectToDeriv() {
-        const apiToken = document.getElementById('apiToken').value;
-        if (!apiToken) {
-            logMessage("API token is required.");
-            return;
+        <div class="log-section">
+            <div class="robot-active"></div>
+            <h3>Bot Logs</h3>
+            <ul id="logList"></ul>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-trade" id="tradeButton" onclick="toggleTrade()">Start Trading</button>
+            <button class="btn-settings" onclick="navigateTo('settingsScreen')">Settings</button>
+        </div>
+    </div>
+
+    <!-- Connect Screen -->
+    <div class="container hidden" id="connectScreen">
+        <h2>Connect MT4/MT5 Account</h2>
+        <form id="connectForm" onsubmit="connectToAccount(event)">
+            <div class="form-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="login" placeholder="Login ID" required>
+            </div>
+
+            <div class="form-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" placeholder="Password" required>
+            </div>
+
+            <div class="form-group">
+                <i class="fas fa-server"></i>
+                <input type="text" id="server" placeholder="MT5/MT4 Server" required>
+            </div>
+
+            <button type="submit" class="btn-connect">Connect</button>
+        </form>
+    </div>
+
+    <!-- Settings Screen -->
+    <div class="container hidden" id="settingsScreen">
+        <h2>Risk Management Settings</h2>
+        <!-- Settings fields remain the same -->
+    </div>
+
+    <div class="nav-bar">
+        <button onclick="navigateTo('homeScreen')">
+            <i class="fas fa-home"></i>
+            Home
+        </button>
+        <button onclick="navigateTo('connectScreen')">
+            <i class="fas fa-plug"></i>
+            Connect
+        </button>
+        <button onclick="navigateTo('settingsScreen')">
+            <i class="fas fa-cog"></i>
+            Settings
+        </button>
+    </div>
+
+    <script>
+        let api;
+        let isTrading = false;
+        const totalTrades = 6;
+        let tradesOpened = 0;
+
+        async function authenticateUser(event) {
+            event.preventDefault();
+            const apiToken = document.getElementById('apiToken').value;
+
+            try {
+                api = new WebSocket(`wss://ws.binaryws.com/websockets/v3?app_id=1089&token=${apiToken}`);
+                api.onopen = () => {
+                    console.log("Connected to Deriv API");
+                    navigateTo('homeScreen');
+                };
+                api.onerror = () => alert("Failed to authenticate. Check API Token.");
+            } catch (error) {
+                alert(`Error authenticating: ${error.message}`);
+            }
         }
 
-        ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-        ws.onopen = () => {
-            logMessage("Connecting to Deriv...");
-            ws.send(JSON.stringify({ authorize: apiToken }));
-        };
+        function navigateTo(screenId) {
+            const screens = document.querySelectorAll('.container');
+            screens.forEach(screen => screen.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+        }
 
-        ws.onmessage = (message) => {
-            const response = JSON.parse(message.data);
+        async function connectToAccount(event) {
+            event.preventDefault();
+            const login = document.getElementById('login').value;
+            const password = document.getElementById('password').value;
+            const server = document.getElementById('server').value;
+            
+            if (!api) {
+                alert("Please authenticate first.");
+                return;
+            }
+            
+            console.log(`Connected to account under VRTC: ${login}`);
+            navigateTo('homeScreen');
+        }
 
-            if (response.error) {
-                logMessage(`Error: ${response.error.message}`);
-                ws.close();
+        function toggleTrade() {
+            if (!api) {
+                alert("Please connect to an account first.");
                 return;
             }
 
-            if (response.msg_type === 'authorize') {
-                isConnected = true;
-                logMessage("Authorization successful. Connected to Deriv.");
-                placeTrade();
-            } else if (response.msg_type === 'buy') {
-                logMessage(`Trade placed successfully. Contract ID: ${response.buy.contract_id}`);
+            const tradeButton = document.getElementById('tradeButton');
+            if (tradeButton.innerText === "Start Trading") {
+                tradeButton.innerText = "Stop Trading";
+                startTrading();
+            } else {
+                tradeButton.innerText = "Start Trading";
+                stopTrading();
             }
-        };
-
-        ws.onerror = (error) => {
-            logMessage(`WebSocket error: ${error.message}`);
-        };
-
-        ws.onclose = () => {
-            isConnected = false;
-            logMessage("Disconnected from Deriv.");
-        };
-    }
-
-    function placeTrade() {
-        if (!isConnected) {
-            logMessage("Not connected. Cannot place trade.");
-            return;
         }
 
-        const tradeRequest = {
-            buy: 1,
-            price: 10,                  // Amount for the trade
-            parameters: {
-                amount: 10,
-                basis: 'stake',
-                contract_type: 'CALL',   // 'CALL' or 'PUT'
-                currency: 'USD',
-                duration: 5,
-                duration_unit: 'm',
-                symbol: 'R_50'
+        function startTrading() {
+            isTrading = true;
+            tradesOpened = 0;
+            addLog("Starting automated trading...");
+
+            tradingInterval = setInterval(() => {
+                if (tradesOpened < totalTrades) {
+                    placeTrade();
+                    tradesOpened++;
+                } else {
+                    stopTrading();
+                    addLog("Max trades reached. Stopping auto-trade.");
+                }
+            }, 6000);
+        }
+
+        function stopTrading() {
+            isTrading = false;
+            clearInterval(tradingInterval);
+            addLog("Automated trading stopped.");
+        }
+
+        async function placeTrade() {
+            const tradeRequest = {
+                buy: 1,
+                parameters: {
+                    amount: 10,
+                    basis: "stake",
+                    contract_type: "CALL",
+                    currency: "USD",
+                    duration: 5,
+                    duration_unit: "m",
+                    symbol: "R_100",
+                    comment: "C.O.N-IBOT-MOBILE"
+                }
+            };
+
+            if (!api || api.readyState !== WebSocket.OPEN) {
+                addLog("WebSocket connection is not open.");
+                return;
             }
-        };
 
-        logMessage("Placing trade...");
-        ws.send(JSON.stringify(tradeRequest));
-    }
-</script>
+            api.send(JSON.stringify(tradeRequest));
+            api.onmessage = (event) => {
+                const response = JSON.parse(event.data);
+                if (response.error) {
+                    addLog(`Trade Error: ${response.error.message}`);
+                } else {
+                    addLog(`Trade Successful: ${response.buy.contract_id}`);
+                }
+            };
+        }
 
+        function addLog(message) {
+            const logList = document.getElementById('logList');
+            const logItem = document.createElement('li');
+            logItem.textContent = message;
+            logList.appendChild(logItem);
+            logList.scrollTop = logList.scrollHeight;
+        }
+
+        function loadImage(event) {
+            const img = document.getElementById('botImage');
+            img.src = URL.createObjectURL(event.target.files[0]);
+        }
+    </script>
 </body>
 </html>
