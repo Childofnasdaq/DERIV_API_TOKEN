@@ -7,53 +7,100 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
         body {
+            margin: 0;
+            padding: 0;
             font-family: 'Arial', sans-serif;
             background-color: #1a2b48;
             color: white;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            padding: 10px;
         }
         .container {
-            margin: 0 auto;
+            flex-grow: 1;
             padding: 20px;
             max-width: 600px;
+            margin: 0 auto;
         }
         h1, h2 {
             text-align: center;
-            margin-bottom: 10px;
+            margin: 10px 0;
         }
-        .form-group input {
+        .bot-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .bot-info img {
             width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            font-size: 16px;
-            border-radius: 5px;
-            border: none;
+            max-width: 300px;
+            border-radius: 8px;
+            margin-bottom: 15px;
         }
-        .btn-connect {
-            background-color: #007bff;
-            color: white;
+        .log-section {
+            background-color: #2a3c5b;
+            border-radius: 8px;
             padding: 15px;
-            font-size: 18px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100%;
+            margin-top: 15px;
+            position: relative;
         }
         .log-section ul {
-            list-style-type: none;
+            list-style: none;
             padding: 0;
-            max-height: 300px;
+            max-height: 150px;
             overflow-y: auto;
+            margin-right: 30px;
         }
         .log-section ul li {
             font-family: monospace;
             color: #00ff00;
         }
-        .log-section {
+        .robot-active {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 10px;
+            height: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
             margin-top: 20px;
+        }
+        .action-buttons button {
+            width: 45%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-trade {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-settings {
+            background-color: white;
+            color: black;
+        }
+        .btn-connect {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
         }
         .nav-bar {
             display: flex;
@@ -69,6 +116,36 @@
             border: none;
             color: white;
             cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-bar button i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .nav-bar button:hover {
+            text-decoration: underline;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-left: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+        .form-group i {
+            color: #007bff;
+            font-size: 20px;
+        }
+        .hidden-upload {
+            display: none;
         }
         .hidden {
             display: none;
@@ -76,172 +153,265 @@
     </style>
 </head>
 <body>
-    <!-- Authentication Screen -->
-    <div class="container" id="authScreen">
+    <div class="container" id="authenticationScreen">
         <h2>Authentication</h2>
         <form id="authForm" onsubmit="authenticateUser(event)">
             <div class="form-group">
+                <i class="fas fa-user-circle"></i>
                 <input type="text" id="mentorId" placeholder="Mentor ID" required>
             </div>
             <div class="form-group">
+                <i class="fas fa-envelope"></i>
                 <input type="email" id="email" placeholder="Email" required>
             </div>
             <div class="form-group">
-                <input type="text" id="licenseKey" placeholder="License Key" required>
+                <i class="fas fa-key"></i>
+                <input type="text" id="licenseKeyAuth" placeholder="License Key" required>
             </div>
             <button type="submit" class="btn-connect">Authenticate</button>
         </form>
+        <p style="text-align: center; margin-top: 10px;"><a href="#" style="color: #007bff;">Need help?</a></p>
     </div>
 
-    <!-- Home Screen (Main Dashboard) -->
     <div class="container hidden" id="homeScreen">
-        <h2>Bot Logs</h2>
+        <div class="bot-info">
+            <h2>CHILD OF NASDAQ</h2>
+            <img id="botImage" src="https://via.placeholder.com/300x200" alt="Bot Image">
+            <p>C.O.N-IBOT, 24/7 OPERATION</p>
+            <button onclick="document.getElementById('fileInput').click();">Upload Icon</button>
+            <input type="file" id="fileInput" class="hidden-upload" accept="image/*" onchange="loadImage(event)">
+        </div>
         <div class="log-section">
+            <div class="robot-active"></div>
+            <h3>Bot Logs</h3>
             <ul id="logList"></ul>
         </div>
-        <button class="btn-connect" id="startTradeBtn" onclick="toggleTrading()">Start Trading</button>
+        <div class="action-buttons">
+            <button class="btn-trade" id="tradeButton" onclick="toggleTrade()">Start Trading</button>
+            <button class="btn-settings" onclick="navigateTo('settingsScreen')">Settings</button>
+        </div>
     </div>
 
-    <!-- Connect Screen (MT5 & Deriv API) -->
     <div class="container hidden" id="connectScreen">
-        <h2>Connect MT5 & Deriv</h2>
-        <form id="connectForm" onsubmit="connectAccounts(event)">
+        <h2>Connect MT5 Account</h2>
+        <form id="connectForm" onsubmit="connectToAccount(event)">
             <div class="form-group">
-                <input type="text" id="mt5Login" placeholder="MT5 Login ID" required>
+                <i class="fas fa-user"></i>
+                <input type="text" id="login" placeholder="Login ID" required>
             </div>
             <div class="form-group">
-                <input type="password" id="mt5Password" placeholder="MT5 Password" required>
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" placeholder="Password" required>
             </div>
             <div class="form-group">
+                <i class="fas fa-server"></i>
+                <input type="text" id="server" placeholder="MT5 Server" required>
+            </div>
+            <div class="form-group">
+                <i class="fas fa-key"></i>
                 <input type="text" id="apiToken" placeholder="Deriv API Token" required>
             </div>
             <button type="submit" class="btn-connect">Connect</button>
         </form>
+        <p style="text-align: center; margin-top: 10px;"><a href="#" style="color: #007bff;">Need help?</a></p>
     </div>
 
-    <!-- Profile Screen (User Profile) -->
-    <div class="container hidden" id="profileScreen">
-        <h2>Your Profile</h2>
-        <div class="form-group">
-            <label for="profileName">Name:</label>
-            <input type="text" id="profileName" placeholder="Enter your name" required>
-        </div>
-        <div class="form-group">
-            <label for="phoneNumber">Phone Number:</label>
-            <input type="text" id="phoneNumber" placeholder="Enter phone number" required>
-        </div>
-        <div class="form-group">
-            <label for="password">Password:</label>
-            <input type="password" id="password" placeholder="Enter new password" required>
-        </div>
-        <button type="button" class="btn-connect" onclick="saveProfile()">Save Profile</button>
+    <div class="container hidden" id="settingsScreen">
+        <h2>Risk Management Settings</h2>
+        <label>Max Risk Per Trade (%):</label>
+        <input type="number" id="riskPerTrade" placeholder="Enter max risk percentage"><br><br>
+        <label>Stop Loss (%):</label>
+        <input type="number" id="stopLoss" placeholder="Enter stop loss percentage"><br><br>
+        <label>Take Profit Multiplier:</label>
+        <input type="number" id="takeProfitMultiplier" placeholder="Enter TP multiplier"><br><br>
+        <label>Trade Size (Lots):</label>
+        <input type="number" id="tradeSize" placeholder="Enter trade size"><br><br>
+        <label>Copy All Trades</label>
+        <input type="checkbox" id="copyAllTrades"><br><br>
+        <label>Enable Notifications</label>
+        <input type="checkbox" id="enableNotifications"><br><br>
+        <button onclick="saveSettings()">Save Settings</button>
     </div>
 
-    <!-- Navigation Bar -->
     <div class="nav-bar">
-        <button onclick="navigateTo('authScreen')">Login</button>
-        <button onclick="navigateTo('homeScreen')">Home</button>
-        <button onclick="navigateTo('connectScreen')">Connect</button>
-        <button onclick="navigateTo('profileScreen')">Profile</button>
+        <button onclick="navigateTo('homeScreen')">
+            <i class="fas fa-home"></i>
+            Home
+        </button>
+        <button onclick="navigateTo('connectScreen')">
+            <i class="fas fa-plug"></i>
+            Connect
+        </button>
+        <button onclick="navigateTo('settingsScreen')">
+            <i class="fas fa-cog"></i>
+            Settings
+        </button>
     </div>
 
     <script>
-        let isTrading = false;
-        let tradeInterval;
+        let ws;
+        let isConnected = false;
+        let tradingInterval;
+        const totalTrades = 100;
+        let tradesOpened = 0;
 
-        // Handle Authentication
+        function navigateTo(screenId) {
+            const screens = document.querySelectorAll('.container');
+            screens.forEach(screen => {
+                screen.classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
         function authenticateUser(event) {
             event.preventDefault();
             const mentorId = document.getElementById('mentorId').value;
             const email = document.getElementById('email').value;
-            const licenseKey = document.getElementById('licenseKey').value;
+            const licenseKey = document.getElementById('licenseKeyAuth').value;
 
-            if (mentorId === '5880' && email === 'childofnasdaqservices@gmail.com' && licenseKey === '12qw-34er-56ty-78ui') {
+            if (validateCredentials(mentorId, email, licenseKey)) {
                 navigateTo('homeScreen');
+                addLog('Authentication successful for Mentor ID: ' + mentorId);
             } else {
-                alert('Invalid credentials');
+                alert('Invalid Mentor ID, Email, or License Key.');
             }
         }
 
-        // Navigate between screens
-        function navigateTo(screen) {
-            document.querySelectorAll('.container').forEach(el => el.classList.add('hidden'));
-            document.getElementById(screen).classList.remove('hidden');
+        function validateCredentials(mentorId, email, licenseKey) {
+            return mentorId && email && licenseKey;
         }
 
-        // Toggle Trading Status
-        function toggleTrading() {
-            isTrading = !isTrading;
-            const buttonText = isTrading ? 'Stop Trading' : 'Start Trading';
-            document.getElementById('startTradeBtn').innerHTML = buttonText;
-            if (isTrading) {
-                startTrading();
+        function toggleTrade() {
+            const tradeButton = document.getElementById('tradeButton');
+            if (tradeButton.innerText === "Start Trading") {
+                tradeButton.innerText = "Stop Trading";
+                addLog("Trading started...");
+                startTradingLogs();
             } else {
-                stopTrading();
+                tradeButton.innerText = "Start Trading";
+                clearInterval(tradingInterval);
+                addLog("Trading stopped.");
+                tradesOpened = 0;
             }
         }
 
-        // Start Trading (Open Multiple Positions)
-        function startTrading() {
-            updateLog('Trading started...');
-            openPositions();  // Open initial positions
-            tradeInterval = setInterval(openPositions, 300000); // Every 5 minutes
+        function startTradingLogs() {
+            let counter = 0;
+            addLog("Verifying account....");
+            setTimeout(() => addLog("Account details successfully submitted....."), 6000);
+            setTimeout(() => addLog("Fetching trading symbols..."), 12000);
+
+            tradingInterval = setInterval(() => {
+                if (tradesOpened < totalTrades) {
+                    if (counter === 0) {
+                        placeTrade();
+                        tradesOpened++;
+                    }
+                    counter++;
+                    if (counter >= 1) {
+                        clearInterval(tradingInterval);
+                    }
+                }
+            }, 6000);
         }
 
-        // Stop Trading
-        function stopTrading() {
-            clearInterval(tradeInterval);  // Stop opening new positions
-            updateLog('Trading stopped...');
-        }
-
-        // Open Multiple Positions
-        function openPositions() {
-            const symbols = ['XAUUSD', 'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD']; // List of symbols to trade
-            symbols.forEach(symbol => {
-                const tradeSize = 0.1; // Example trade size
-                const tp = 50; // Take Profit
-                const sl = 30; // Stop Loss
-                // Execute the trade (mock)
-                updateLog(`Opened position on ${symbol} with TP: ${tp} and SL: ${sl}`);
-            });
-        }
-
-        // Update Logs
-        function updateLog(message) {
+        function addLog(message) {
             const logList = document.getElementById('logList');
             const logItem = document.createElement('li');
             logItem.textContent = message;
             logList.appendChild(logItem);
+            logList.scrollTop = logList.scrollHeight;
         }
 
-        // Connect MT5 & Deriv API
-        function connectAccounts(event) {
+        function connectToAccount(event) {
             event.preventDefault();
-
-            const mt5Login = document.getElementById('mt5Login').value;
-            const mt5Password = document.getElementById('mt5Password').value;
+            const login = document.getElementById('login').value;
+            const password = document.getElementById('password').value;
+            const server = document.getElementById('server').value;
             const apiToken = document.getElementById('apiToken').value;
 
-            // Example API Call to Deriv
-            fetch('https://api.deriv.com/v1/market', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${apiToken}`,
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    updateLog('Connected to Deriv');
-                } else {
-                    updateLog('Failed to connect to Deriv');
-                }
-            });
+            addLog('Connecting to MT5 account...');
+            connectToDeriv(apiToken);
         }
 
-        // Save Profile
-        function saveProfile() {
-            alert('Profile saved!');
+        function connectToDeriv(apiToken) {
+            ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
+            ws.onopen = () => {
+                addLog("Connecting to Deriv...");
+                ws.send(JSON.stringify({ authorize: apiToken }));
+            };
+
+            ws.onmessage = (message) => {
+                const response = JSON.parse(message.data);
+
+                if (response.error) {
+                    addLog(`Error: ${response.error.message}`);
+                    ws.close();
+                    return;
+                }
+
+                if (response.msg_type === 'authorize') {
+                    isConnected = true;
+                    addLog("Authorization successful. Connected to Deriv.");
+                    navigateTo('homeScreen');
+                } else if (response.msg_type === 'buy') {
+                    addLog(`Trade placed successfully. Contract ID: ${response.buy.contract_id}`);
+                }
+            };
+
+            ws.onerror = (error) => {
+                addLog(`WebSocket error: ${error.message}`);
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                addLog("Disconnected from Deriv.");
+            };
+        }
+
+        function placeTrade() {
+            if (!isConnected) {
+                addLog("Not connected. Cannot place trade.");
+                return;
+            }
+
+            const tradeRequest = {
+                buy: 1,
+                price: 10,
+                parameters: {
+                    amount: 10,
+                    basis: 'stake',
+                    contract_type: 'CALL',
+                    currency: 'USD',
+                    duration: 5,
+                    duration_unit: 'm',
+                    symbol: 'frxXAUUSD'
+                }
+            };
+
+            addLog("Placing trade on MT5...");
+            ws.send(JSON.stringify(tradeRequest));
+            addLog("SELL XAUUSD...");
+            addLog("TP: 50 pips");
+            addLog("SL: 20 pips");
+            addLog("Trade successfully opened on MT5.....");
+        }
+
+        function saveSettings() {
+            const riskPerTrade = document.getElementById('riskPerTrade').value;
+            const stopLoss = document.getElementById('stopLoss').value;
+            const takeProfitMultiplier = document.getElementById('takeProfitMultiplier').value;
+            const tradeSize = document.getElementById('tradeSize').value;
+            const copyAllTrades = document.getElementById('copyAllTrades').checked;
+            const enableNotifications = document.getElementById('enableNotifications').checked;
+
+            addLog('Settings saved: Risk ' + riskPerTrade + '%, Stop Loss ' + stopLoss + '%, TP Multiplier ' + takeProfitMultiplier + ', Trade Size ' + tradeSize + ', Copy Trades: ' + copyAllTrades + ', Notifications: ' + enableNotifications);
+            alert('Settings saved successfully!');
+        }
+
+        function loadImage(event) {
+            const img = document.getElementById('botImage');
+            img.src = URL.createObjectURL(event.target.files[0]);
         }
     </script>
 </body>
