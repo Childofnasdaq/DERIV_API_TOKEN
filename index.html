@@ -6,7 +6,151 @@
     <title>Child of Nasdaq - MT5 Trading</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        /* Styles omitted for brevity */
+        /* Basic styling */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #1a2b48;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            flex-grow: 1;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            text-align: center;
+            margin: 10px 0;
+        }
+        .bot-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .bot-info img {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .log-section {
+            background-color: #2a3c5b;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            position: relative;
+        }
+        .log-section ul {
+            list-style: none;
+            padding: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            margin-right: 30px;
+        }
+        .log-section ul li {
+            font-family: monospace;
+            color: #00ff00;
+        }
+        .robot-active {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 10px;
+            height: 10px;
+            background-color: #00ff00;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.5); }
+            100% { transform: scale(1); }
+        }
+        .action-buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .action-buttons button {
+            width: 45%;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn-trade {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-settings {
+            background-color: white;
+            color: black;
+        }
+        .btn-connect {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .nav-bar {
+            display: flex;
+            justify-content: space-around;
+            background-color: #1c2e4a;
+            padding: 10px 0;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+        .nav-bar button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .nav-bar button i {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .nav-bar button:hover {
+            text-decoration: underline;
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-left: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+        .form-group i {
+            color: #007bff;
+            font-size: 20px;
+        }
+        .hidden-upload {
+            display: none;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -74,25 +218,31 @@
     </div>
 
     <div class="container hidden" id="settingsScreen">
-        <!-- Settings omitted for brevity -->
+        <h2>Risk Management Settings</h2>
+        <label>Max Risk Per Trade (%):</label>
+        <input type="number" id="riskPerTrade" placeholder="Enter max risk percentage"><br><br>
+        <label>Stop Loss (%):</label>
+        <input type="number" id="stopLoss" placeholder="Enter stop loss percentage"><br><br>
+        <label>Take Profit Multiplier:</label>
+        <input type="number" id="takeProfitMultiplier" placeholder="Enter TP multiplier"><br><br>
+        <label>Trade Size (Lots):</label>
+        <input type="number" id="tradeSize" placeholder="Enter trade size"><br><br>
+        <label>Copy All Trades</label>
+        <input type="checkbox" id="copyAllTrades"><br><br>
+        <label>Enable Notifications</label>
+        <input type="checkbox" id="enableNotifications"><br><br>
+        <button onclick="saveSettings()">Save Settings</button>
     </div>
 
     <div class="nav-bar">
-        <!-- Navbar omitted for brevity -->
+        <button onclick="navigateTo('homeScreen')"><i class="fas fa-home"></i> Home</button>
+        <button onclick="navigateTo('connectScreen')"><i class="fas fa-plug"></i> Connect</button>
+        <button onclick="navigateTo('settingsScreen')"><i class="fas fa-cogs"></i> Settings</button>
     </div>
 
     <script>
-        let ws;
-        let isConnected = false;
-        let tradingInterval;
-        const totalTrades = 6;
-        let tradesOpened = 0;
-
         function navigateTo(screenId) {
-            const screens = document.querySelectorAll('.container');
-            screens.forEach(screen => {
-                screen.classList.add('hidden');
-            });
+            document.querySelectorAll('.container').forEach(container => container.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
         }
 
@@ -100,92 +250,101 @@
             event.preventDefault();
             const mentorId = document.getElementById('mentorId').value;
             const email = document.getElementById('email').value;
-            const licenseKey = document.getElementById('licenseKeyAuth').value;
+            const licenseKeyAuth = document.getElementById('licenseKeyAuth').value;
 
-            if (validateCredentials(mentorId, email, licenseKey)) {
-                navigateTo('connectScreen');
-                addLog('Authentication successful.');
+            if (mentorId === '5880' && email === 'childofnasdaqservices@gmail.com' && licenseKeyAuth === '12qw-34er-56ty-78ui') {
+                navigateTo('homeScreen');
             } else {
-                alert('Invalid Mentor ID, Email, or License Key.');
+                alert("Invalid Mentor ID, Email, or License Key");
             }
         }
 
-        function validateCredentials(mentorId, email, licenseKey) {
-            return mentorId && email && licenseKey;
-        }
+        let trading = false;
 
         function toggleTrade() {
-            const tradeButton = document.getElementById('tradeButton');
-            if (tradeButton.innerText === "Start Trading") {
-                tradeButton.innerText = "Stop Trading";
+            trading = !trading;
+            const tradeButton = document.getElementById("tradeButton");
+            if (trading) {
                 addLog("Trading started...");
-                startTradingLogs();
+                tradeButton.textContent = "Stop Trading";
+                openTrade();  // Open a trade via API
             } else {
-                tradeButton.innerText = "Start Trading";
-                clearInterval(tradingInterval);
                 addLog("Trading stopped.");
-                tradesOpened = 0;
+                tradeButton.textContent = "Start Trading";
             }
-        }
-
-        function startTradingLogs() {
-            let counter = 0;
-            addLog("Verifying account....");
-            setTimeout(() => addLog("Account details successfully submitted....."), 6000);
-            setTimeout(() => addLog("Fetching trading symbols..."), 12000);
-
-            tradingInterval = setInterval(() => {
-                if (tradesOpened < totalTrades) {
-                    if (counter === 0) {
-                        placeTrade();
-                        tradesOpened++;
-                    }
-                    counter++;
-                    if (counter >= 1) {
-                        clearInterval(tradingInterval);
-                    }
-                }
-            }, 6000);
         }
 
         function addLog(message) {
-            const logList = document.getElementById('logList');
-            const logItem = document.createElement('li');
-            logItem.textContent = message;
-            logList.appendChild(logItem);
+            const logList = document.getElementById("logList");
+            const newLog = document.createElement("li");
+            newLog.textContent = message;
+            logList.appendChild(newLog);
             logList.scrollTop = logList.scrollHeight;
+        }
+
+        function openTrade() {
+            const apiToken = document.getElementById("apiToken").value;
+            const tradeDetails = {
+                action: 'buy',  // Example action: buy, change this based on your logic
+                symbol: 'XAUUSD',
+                volume: 0.1,  // Example volume (lots)
+                stopLoss: 20, // Example SL in pips
+                takeProfit: 50, // Example TP in pips
+            };
+
+            fetch('https://your-backend-api.com/open-trade', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    apiToken: apiToken,
+                    tradeDetails: tradeDetails
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addLog("Trade successfully opened: " + data.message);
+            })
+            .catch(error => {
+                addLog("Error opening trade: " + error.message);
+            });
         }
 
         function connectToAccount(event) {
             event.preventDefault();
-            const login = document.getElementById('login').value;
-            const password = document.getElementById('password').value;
-            const server = document.getElementById('server').value;
-            const apiToken = document.getElementById('apiToken').value;
+            const login = document.getElementById("login").value;
+            const password = document.getElementById("password").value;
+            const server = document.getElementById("server").value;
+            const apiToken = document.getElementById("apiToken").value;
 
-            addLog('Connecting to MT5 account...');
-            connectToDeriv(apiToken);
+            addLog("Connecting to MT5 account...");
+
+            // Here, make an API call to connect the MT5 account using the provided details
+            // You would send these details to your backend to interact with MT5 API
         }
 
-        function connectToDeriv(apiToken) {
-            ws = new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id=1089');
-            ws.onopen = function () {
-                ws.send(JSON.stringify({ authorize: apiToken }));
-            };
-            ws.onmessage = function (msg) {
-                const data = JSON.parse(msg.data);
-                if (data.error) {
-                    addLog("Connection error: " + data.error.message);
-                    return;
-                }
-                addLog('MT5 account connected successfully');
-                toggleTrade();
-            };
+        function saveSettings() {
+            const riskPerTrade = document.getElementById('riskPerTrade').value;
+            const stopLoss = document.getElementById('stopLoss').value;
+            const takeProfitMultiplier = document.getElementById('takeProfitMultiplier').value;
+            const tradeSize = document.getElementById('tradeSize').value;
+            const copyAllTrades = document.getElementById('copyAllTrades').checked;
+            const enableNotifications = document.getElementById('enableNotifications').checked;
+
+            addLog("Settings saved.");
+            console.log("Risk Settings:", { riskPerTrade, stopLoss, takeProfitMultiplier, tradeSize, copyAllTrades, enableNotifications });
         }
 
-        function placeTrade() {
-            addLog("Placing trade...");
-            setTimeout(() => addLog("Trade executed on MT5 account."), 6000);
+        function loadImage(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('botImage').src = e.target.result;
+            };
+            if (file) {
+                reader.readAsDataURL(file);
+            }
         }
     </script>
 </body>
